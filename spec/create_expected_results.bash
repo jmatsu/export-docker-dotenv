@@ -12,5 +12,5 @@ done
 
 docker run --rm \
   "${env_file_args[@]}" \
-  -it alpine:3.14 \
+  -t alpine:3.14 \
   /bin/sh -c 'env | grep DOCKER_DOTENV_COMPATIBLE_ | sort; printf "%s\n" $DOCKER_DOTENV_COMPATIBLE_12'
