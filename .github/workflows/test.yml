@@ -36,7 +36,7 @@ jobs:
           - shell: /bin/dash
             function_file_path: ./export-docker-dotenv-without-proc-subst
           - shell: /bin/yash
-            function_file_path: ./export-docker-dotenv
+            function_file_path: ./export-docker-dotenv-without-proc-subst
     env:
       FUNCTION_FILE_PATH: ${{ matrix.function_file_path }}
     steps:
