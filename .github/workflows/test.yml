@@ -40,5 +40,5 @@ jobs:
       FUNCTION_FILE_PATH: ${{ matrix.function_file_path }}
     steps:
       - uses: actions/checkout@v3
-      - run: ./spec/compare_results.bash '${{ matrix.env_file }}' '${{ matrix.overload_file }}'
+      - run: ./spec/compare_results.bash '${{ matrix.shell }}' '${{ matrix.env_file }}' '${{ matrix.overload_file }}'
   
