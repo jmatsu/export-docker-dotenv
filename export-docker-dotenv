@@ -6,12 +6,17 @@ export_docker_dotenv() {
 
   # Use printf, instead of echo, to handle escaped characters properly
 
-  _export_docker_dotenv_env_path="$1"
-  _export_docker_dotenv_mode="${2-export}"
-  _export_docker_dotenv_line=''
-  _export_docker_dotenv_name=''
-  _export_docker_dotenv_value=''
-  _export_docker_dotenv_status='0'
+  if type local >/dev/null 2>&1; then
+    local -r _export_docker_dotenv_env_path="$1" _export_docker_dotenv_mode="${2-export}"
+    local _export_docker_dotenv_line='' _export_docker_dotenv_name='' _export_docker_dotenv_value='' _export_docker_dotenv_status='0'
+  else
+    _export_docker_dotenv_env_path="$1"
+    _export_docker_dotenv_mode="${2-export}"
+    _export_docker_dotenv_line=''
+    _export_docker_dotenv_name=''
+    _export_docker_dotenv_value=''
+    _export_docker_dotenv_status='0'
+  fi
 
   # Be careful using EXPORT_DOCKER_DOTENV_VERBOSE because it prints the contents in .env
   _export_docker_dotenv_verbose="${EXPORT_DOCKER_DOTENV_VERBOSE-}"
@@ -92,13 +97,15 @@ export_docker_dotenv() {
     esac
   done < <(cat < "$_export_docker_dotenv_env_path" | grep -v "^\s*#" | grep "=")
 
-  unset _export_docker_dotenv_env_path
-  unset _export_docker_dotenv_mode
-  unset _export_docker_dotenv_line
-  unset _export_docker_dotenv_name
-  unset _export_docker_dotenv_value
-  unset _export_docker_dotenv_status
-  unset _export_docker_dotenv_verbose
+  if ! type local >/dev/null 2>&1; then
+    unset _export_docker_dotenv_env_path
+    unset _export_docker_dotenv_mode
+    unset _export_docker_dotenv_line
+    unset _export_docker_dotenv_name
+    unset _export_docker_dotenv_value
+    unset _export_docker_dotenv_status
+    unset _export_docker_dotenv_verbose
+  fi
 
   return $_export_docker_dotenv_status
 }
