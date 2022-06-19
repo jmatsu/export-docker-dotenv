@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eux
 
 readonly shell_path="${1?shell is required}"; shift
 
