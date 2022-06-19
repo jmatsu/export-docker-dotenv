@@ -58,11 +58,12 @@ See the test cases. [./.github/workflows/test.yml](./.github/workflows/test.yml)
 
 # Docker dotenv Syntax
 
-Docker's dotenv specification is mentioned at https://docs.docker.com/compose/env-file/ but not fully explained.
+Docker's dotenv specification is mentioned at https://docs.docker.com/compose/env-file/ but not fully explained. This section shows the inferred specification by its behaviour.
 
 You can see the expected result of Docker by running `docker run --rm --env-file <env file> -it alpine:3.14 /bin/sh -c 'env | grep DOCKER_DOTENV_COMPATIBLE_ | sort'`
 
-> The results below are produced by `Docker version 20.10.16, build aa7e414`.
+<destils>
+    <summary>Outputs of env/compatible.env and env/compatible.overload.env produced by `Docker version 20.10.16, build aa7e414`.</summary>
 
 ```txtDOCKER_DOTENV_COMPATIBLE_00=Hello world!
 DOCKER_DOTENV_COMPATIBLE_01=Not buggy. I overloaded the old value.
@@ -88,16 +89,17 @@ DOCKER_DOTENV_COMPATIBLE_15=A backslash is not a escape char \\n. You can see tw
 ```txt
 Multiple = are found but only the first = is used
 ```
+    
+</details>
 
-## Invalid assigments will be ignored
+## Non-assigments will be ignored
 
-In the document, Docker mentions on comments and empty lines but actually Docker's dotenv ignores invalid variable assigment formats. In fact, comments and empty lines are also invalid for shell.
+The format of assigment is `VAR=VAL`. In the document, Docker mentions on comments and empty lines but actually Docker's dotenv ignores invalid variable assigment formats. 
 
 - Lines start with a sharp `#`
   - It also allows leading spaces
 - Empty or blank lines
 - Lines without `=`
-- Name contains spaces
 
 ```txt
 # a comment
@@ -105,7 +107,14 @@ In the document, Docker mentions on comments and empty lines but actually Docker
   # The line above is an empty line. This is also a comment btw.
 
 this is an invalid line.
-FOO =spaces are not allowed in names
+```
+
+## Invalid assigments cause errors
+
+It seems `VAR` must follow the assigment format of POSIX shell.
+
+```
+FOOBARBAZ =spaces are not allowed in VAR
 ```
 
 ## All are literals
