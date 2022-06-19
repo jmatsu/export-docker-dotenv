@@ -27,18 +27,24 @@ jobs:
           - env/compatible.overload.env
         include:
           - shell: /bin/bash
-            function_file_path: export-docker-dotenv
+            function_file_path: ./export-docker-dotenv
           - shell: /bin/zsh
-            function_file_path: export-docker-dotenv
+            function_file_path: ./export-docker-dotenv
           - shell: /bin/ksh
-            function_file_path: export-docker-dotenv
-          - shell: /bin/sh
+            function_file_path: ./export-docker-dotenv
+          - shell: /bin/dash
             function_file_path: ./export-docker-dotenv-without-proc-subst
           - shell: /bin/dash
             function_file_path: ./export-docker-dotenv-without-proc-subst
     env:
       FUNCTION_FILE_PATH: ${{ matrix.function_file_path }}
     steps:
+      - name: Install shell if not found
+        run: |
+          if ! type ${{ matrix.shell }}; then
+            sudo apt-get update
+            sudo apt-get install "$(basename '${{ matrix.shell }}')"
+          fi
       - uses: actions/checkout@v3
       - run: ./spec/compare_results.bash '${{ matrix.shell }}' '${{ matrix.env_file }}' '${{ matrix.overload_file }}'
   
