@@ -16,38 +16,28 @@ jobs:
       matrix:
         shell: # this may be insufficient because the actual binary of each shell commands may differ...
           - /bin/bash
-          - /bin/sh
           - /bin/zsh
           - /bin/ksh
+          - /bin/sh
           - /bin/dash
         env_file:
           - env/compatible.env
         overload_file:
           - env/compatible.overload.env
-        include:
-          - shell: /bin/bash
-            env_file: env/compatible.shell-dependant.env
-          - shell: /bin/ksh
-            env_file: env/compatible.shell-dependant.env
-          - shell: /bin/zsh
-            env_file: env/compatible.shell-dependant.env
+      include:
+        - shell: /bin/bash
+          function_file_path: export-docker-dotenv
+        - shell: /bin/zsh
+          function_file_path: export-docker-dotenv
+        - shell: /bin/ksh
+          function_file_path: export-docker-dotenv
+        - shell: /bin/sh
+          function_file_path: export-docker-dotenv-without-proc-subst
+        - shell: /bin/dash
+          function_file_path: export-docker-dotenv-without-proc-subst
+    env:
+      FUNCTION_FILE_PATH: ${{ matrix.function_file_path }}
     steps:
-      - use: actions/checkout@v3
-      - run: ./spec/compare_results.bash '${{ matrix.env_file }}' '${{ matrix.overload_file }}' | tee expected.env
-
-      - name: multiple = spec
-        if:
-          matrix.env_file == 'compatible.env'
-        run: |
-          docker run --rm \
-            --env-file compatible.env \
-            -it alpine:3.14 \
-            /bin/sh -c 'echo $DOCKER_DOTENV_COMPATIBLE_12' | tee expected.compatible_12
-
-          ${{ matrix.shell }} -c '. ./export-docker-dotenv; export_docker_dotenv ${{ matrix.env_file }}; echo $DOCKER_DOTENV_COMPATIBLE_12' | tee actual.compatible_12
-
-          if diff --strip-trailing-cr expected.compatible_12 actual.compatible_12; then
-            echo 'ok'
-          else
-            echo '::error::the generated files differ (export)'
-          fi
+      - uses: actions/checkout@v3
+      - run: ./spec/compare_results.bash '${{ matrix.env_file }}' '${{ matrix.overload_file }}'
+  
