@@ -9,8 +9,8 @@ readonly env_files=("$@")
 load_commands=()
 
 for env_file in "${env_files[@]}"; do
-  load_commands+=("${FUNCTION_FILE_PATH-export-docker-dotenv}" "$env_file" ";")
+  load_commands+=("export_docker_dotenv" "$env_file" ";")
 done
 
 "$shell_path" -c \
-  ". ./export-docker-dotenv; ${load_commands[*]} env | grep DOCKER_DOTENV_COMPATIBLE_ | sort; printf '%s\n' \$DOCKER_DOTENV_COMPATIBLE_12"
+  ". ${FUNCTION_FILE_PATH-export-docker-dotenv}; ${load_commands[*]} env | grep DOCKER_DOTENV_COMPATIBLE_ | sort; printf '%s\n' \"\$DOCKER_DOTENV_COMPATIBLE_12\""
