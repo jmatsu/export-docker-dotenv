@@ -1,44 +1,120 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 export_docker_dotenv() {
-  local env_path="$1" mode="${2-export}" line='' name='' value=''
+  # BSD_ECHO option should enabled for zsh to handle backslashes
+  _export_docker_dotenv_evauated_bsd_echo_opt=''
+  # shellcheck disable=SC3040
+  if type setopt >/dev/null 2>&1 && setopt | grep "BSD_ECHO" && set -o BSD_ECHO; then
+    _export_docker_dotenv_evauated_bsd_echo_opt='0'
+  fi
 
-  intermediate_file="$(mktemp)"
-  local intermediate_file
+  # be careful using EXPORT_DOCKER_DOTENV_VERBOSE because it prints the contents in .env
+  _export_docker_dotenv_env_path="$1"
+  _export_docker_dotenv_mode="${2-export}"
+  _export_docker_dotenv_line=''
+  _export_docker_dotenv_name=''
+  _export_docker_dotenv_value=''
+  _export_docker_dotenv_status='0'
+  _export_docker_dotenv_verbose="${EXPORT_DOCKER_DOTENV_VERBOSE-}"
+
+  _export_docker_dotenv_intermediate_file="$(mktemp)"
 
   # 1. Delete comments line that start with 0-N spaces + #
   # 2. Skip empty lines
   # 3. Assign each value to a tramporary variable
   # 4. Delegate it to a target environment variable through Bash itself to avoid multiple evaluation
 
+  if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+    echo "preservce the current env names to block overloading the existing variables" 1>&2
+  fi
+
   # process substitution is one of Bash features.
-  cat < "$env_path" | grep -v "^\s*#" | grep "=" > "$intermediate_file"
+  cat < "$_export_docker_dotenv_env_path" | grep -v "^\s*#" | grep "=" > "$_export_docker_dotenv_intermediate_file"
+
+  if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+    echo "filtered comments, empty lines and illegal assignment lines" 1>&2
+  fi
+
+  _export_docker_dotenv_line_number=0
 
   while read -r line; do
-    name="$(echo "$line" | cut -d = -f1)"
+    _export_docker_dotenv_line_number="$((_export_docker_dotenv_line_number + 1))"
 
-    if [ "$name" = "" ]; then
-      # Skip empty lines (this may include invalid lines)
+    _export_docker_dotenv_name="$(echo "$line" | cut -d = -f1)" || :
+
+    if [ "$_export_docker_dotenv_name" = "" ]; then
+      if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+        echo "L$_export_docker_dotenv_line_number: (unexpected) skipped because the name is not found" 1>&2
+      fi
+
       continue
     fi
 
     # Split the string only by the first occurance
     # shellcheck disable=SC2034
-    value="$(echo "$line" | awk -F= '{ idx = index($0, "="); print substr($0, idx + 1); }')"
 
-    # Don't inline the *value* because ' or " in the *value* would be evaluated twice and cause unexpected results.
-    eval "$name=\"\$value\""
+    if _export_docker_dotenv_value="$(echo "$line" | awk -F= '{ idx = index($0, "="); print substr($0, idx + 1); }')"; then
+      if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+        echo "L$_export_docker_dotenv_line_number: $_export_docker_dotenv_name's value was parsed and got $_export_docker_dotenv_value" 1>&2
+      fi
+    else
+      _export_docker_dotenv_status="$?"
+      if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+        echo "L$_export_docker_dotenv_line_number: $_export_docker_dotenv_line couldn't be parsed" 1>&2
+      fi
+      break
+    fi
 
-    case "$mode" in
+    # Don't inline the value because ' or " in the value would be evaluated twice and cause unexpected results.
+    if eval "$_export_docker_dotenv_name=\"\$_export_docker_dotenv_value\""; then
+      if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+        echo "L$_export_docker_dotenv_line_number: $_export_docker_dotenv_name was sucessfully assigned" 1>&2
+      fi
+    else
+      _export_docker_dotenv_status="$?"
+      if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+        echo "L$_export_docker_dotenv_line_number: $_export_docker_dotenv_name couldn't be assigned" 1>&2
+      fi
+
+      break
+    fi
+
+    case "$_export_docker_dotenv_mode" in
       export)
         # shellcheck disable=SC2163
-        export "$name"
+        if export "$_export_docker_dotenv_name"; then
+          if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+            echo "L$_export_docker_dotenv_line_number: $_export_docker_dotenv_name was sucessfully exported" 1>&2
+          fi
+        else
+          _export_docker_dotenv_status="$?"
+          if [ ! "$_export_docker_dotenv_verbose" = "" ]; then
+            echo "L$_export_docker_dotenv_line_number: $_export_docker_dotenv_name couldn't be exported" 1>&2
+          fi
+          break
+        fi
         ;;
       --no-export)
         # no-op. $name is already available in this shell session.
         ;;
     esac
-  done < "$intermediate_file"
+  done < "$_export_docker_dotenv_intermediate_file"
 
-  rm "$intermediate_file"
+  rm "$_export_docker_dotenv_intermediate_file" || :
+
+  if [ ! "$_export_docker_dotenv_evauated_bsd_echo_opt" = "" ]; then
+    # shellcheck disable=SC3040
+    set +o BSD_ECHO
+  fi
+
+  unset _export_docker_dotenv_env_path
+  unset _export_docker_dotenv_mode
+  unset _export_docker_dotenv_line
+  unset _export_docker_dotenv_name
+  unset _export_docker_dotenv_value
+  unset _export_docker_dotenv_status
+  unset _export_docker_dotenv_verbose
+  unset _export_docker_dotenv_intermediate_file
+
+  return $_export_docker_dotenv_status
 }

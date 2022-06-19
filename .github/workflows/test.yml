@@ -14,36 +14,26 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shell:
+        shell: # this may be insufficient because the actual binary of each shell commands may differ...
           - /bin/bash
           - /bin/sh
           - /bin/zsh
           - /bin/ksh
           - /bin/dash
         env_file:
-          - compatible.env
+          - env/compatible.env
+        overload_file:
+          - env/compatible.overload.env
         include:
           - shell: /bin/bash
-            env_file: compatible.only-bash.env
+            env_file: env/compatible.shell-dependant.env
+          - shell: /bin/ksh
+            env_file: env/compatible.shell-dependant.env
+          - shell: /bin/zsh
+            env_file: env/compatible.shell-dependant.env
     steps:
       - use: actions/checkout@v3
-      - name: Create the expected
-        run: |
-          docker run --rm \
-            --env-file compatible.env \
-            -it alpine:3.14 \
-            /bin/sh -c 'env | grep DOCKER_DOTENV_COMPATIBLE_ | sort' | tee expected.env
-      - name: Create the actual
-        run: |
-          ${{ matrix.shell }} -c '. ./export-docker-dotenv; export_docker_dotenv ${{ matrix.env_file }}; env | grep DOCKER_DOTENV_COMPATIBLE_ | sort' | tee actual.env
-
-      - name: Compare to actual (${{ matrix.env_file }})
-        run: |
-          if diff expected.env actual.env; then
-            echo 'ok'
-          else
-            echo '::error::the generated files differ (export)'
-          fi
+      - run: ./spec/compare_results.bash '${{ matrix.env_file }}' '${{ matrix.overload_file }}' | tee expected.env
 
       - name: multiple = spec
         if:
@@ -56,7 +46,7 @@ jobs:
 
           ${{ matrix.shell }} -c '. ./export-docker-dotenv; export_docker_dotenv ${{ matrix.env_file }}; echo $DOCKER_DOTENV_COMPATIBLE_12' | tee actual.compatible_12
 
-          if diff expected.compatible_12 actual.compatible_12; then
+          if diff --strip-trailing-cr expected.compatible_12 actual.compatible_12; then
             echo 'ok'
           else
             echo '::error::the generated files differ (export)'
