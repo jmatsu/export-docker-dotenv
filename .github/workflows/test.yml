@@ -1,0 +1,63 @@
+name: Compare results
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+defaults:
+  shell: bash
+
+jobs:
+  comparison-compatible-env:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shell:
+          - /bin/bash
+          - /bin/sh
+          - /bin/zsh
+          - /bin/ksh
+          - /bin/dash
+        env_file:
+          - compatible.env
+        include:
+          - shell: /bin/bash
+            env_file: compatible.only-bash.env
+    steps:
+      - use: actions/checkout@v3
+      - name: Create the expected
+        run: |
+          docker run --rm \
+            --env-file compatible.env \
+            -it alpine:3.14 \
+            /bin/sh -c 'env | grep DOCKER_DOTENV_COMPATIBLE_ | sort' | tee expected.env
+      - name: Create the actual
+        run: |
+          ${{ matrix.shell }} -c '. ./export-docker-dotenv; export_docker_dotenv ${{ matrix.env_file }}; env | grep DOCKER_DOTENV_COMPATIBLE_ | sort' | tee actual.env
+
+      - name: Compare to actual (${{ matrix.env_file }})
+        run: |
+          if diff expected.env actual.env; then
+            echo 'ok'
+          else
+            echo '::error::the generated files differ (export)'
+          fi
+
+      - name: multiple = spec
+        if:
+          matrix.env_file == 'compatible.env'
+        run: |
+          docker run --rm \
+            --env-file compatible.env \
+            -it alpine:3.14 \
+            /bin/sh -c 'echo $DOCKER_DOTENV_COMPATIBLE_12' | tee expected.compatible_12
+
+          ${{ matrix.shell }} -c '. ./export-docker-dotenv; export_docker_dotenv ${{ matrix.env_file }}; echo $DOCKER_DOTENV_COMPATIBLE_12' | tee actual.compatible_12
+
+          if diff expected.compatible_12 actual.compatible_12; then
+            echo 'ok'
+          else
+            echo '::error::the generated files differ (export)'
+          fi

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+export_docker_dotenv() {
+  local env_path="$1" mode="${2-export}" line='' name='' value=''
+
+  intermediate_file="$(mktemp)"
+  local intermediate_file
+
+  # 1. Delete comments line that start with 0-N spaces + #
+  # 2. Skip empty lines
+  # 3. Assign each value to a tramporary variable
+  # 4. Delegate it to a target environment variable through Bash itself to avoid multiple evaluation
+
+  # process substitution is one of Bash features.
+  cat < "$env_path" | grep -v "^\s*#" | grep "=" > "$intermediate_file"
+
+  while read -r line; do
+    name="$(echo "$line" | cut -d = -f1)"
+
+    if [ "$name" = "" ]; then
+      # Skip empty lines (this may include invalid lines)
+      continue
+    fi
+
+    # Split the string only by the first occurance
+    # shellcheck disable=SC2034
+    value="$(echo "$line" | awk -F= '{ idx = index($0, "="); print substr($0, idx + 1); }')"
+
+    # Don't inline the *value* because ' or " in the *value* would be evaluated twice and cause unexpected results.
+    eval "$name=\"\$value\""
+
+    case "$mode" in
+      export)
+        # shellcheck disable=SC2163
+        export "$name"
+        ;;
+      --no-export)
+        # no-op. $name is already available in this shell session.
+        ;;
+    esac
+  done < "$intermediate_file"
+
+  rm "$intermediate_file"
+}
