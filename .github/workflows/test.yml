@@ -48,5 +48,5 @@ jobs:
           fi
       - uses: actions/checkout@v4
       - run: ./spec/compare_results.bash '${{ matrix.shell }}' '${{ matrix.env_file }}' '${{ matrix.overload_file }}'
-      - run: ./spec/compare_results.bash '${{ matrix.shell }}' '${{ matrix.env_file }}' --no-overwrite '${{ matrix.overload_file }}'
+      - run: ./spec/compare_results.bash '${{ matrix.shell }}' --no-overwrite '${{ matrix.env_file }}' '${{ matrix.overload_file }}'
   
