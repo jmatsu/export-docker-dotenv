@@ -25,8 +25,8 @@ else
   reversed_args_for_expectation=("${env_files[@]}")
 fi
 
-spec/create_expected_results.bash "$env_mode" "${reversed_args_for_expectation[@]}" > "$expected_result_path"
-spec/create_actual_results.bash "$shell_path" "${env_files[@]}" > "$actual_result_path"
+spec/create_expected_results.bash "${reversed_args_for_expectation[@]}" > "$expected_result_path"
+spec/create_actual_results.bash "$shell_path" "$env_mode" "${env_files[@]}" > "$actual_result_path"
 
 if diff --strip-trailing-cr "$expected_result_path" "$actual_result_path"; then
   echo 'ok'
