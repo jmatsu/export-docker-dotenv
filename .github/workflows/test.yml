@@ -46,6 +46,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install "$(basename '${{ matrix.shell }}')"
           fi
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: ./spec/compare_results.bash '${{ matrix.shell }}' '${{ matrix.env_file }}' '${{ matrix.overload_file }}'
+      - run: ./spec/compare_results.bash '${{ matrix.shell }}' '${{ matrix.env_file }}' --no-overwrite '${{ matrix.overload_file }}'
   
