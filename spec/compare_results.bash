@@ -17,16 +17,16 @@ if ((${#env_files[*]} == 0)); then
 fi
 
 if [[ "$env_mode" == "--no-overwrite" ]]; then
-  args=()
+  reversed_args_for_expectation=()
   for ((i = $((${#env_files[@]} - 1)); i >= 0; i--)); do
-      args+=(${env_files[i]})
+      reversed_args_for_expectation+=(${env_files[i]})
   done
 else
-  args=("${env_files[@]}")
+  reversed_args_for_expectation=("${env_files[@]}")
 fi
 
-spec/create_expected_results.bash "$env_mode" "${args[@]}" > "$expected_result_path"
-spec/create_actual_results.bash "$shell_path" "${args[@]}" > "$actual_result_path"
+spec/create_expected_results.bash "$env_mode" "${reversed_args_for_expectation[@]}" > "$expected_result_path"
+spec/create_actual_results.bash "$shell_path" "${env_files[@]}" > "$actual_result_path"
 
 if diff --strip-trailing-cr "$expected_result_path" "$actual_result_path"; then
   echo 'ok'
