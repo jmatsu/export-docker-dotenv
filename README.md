@@ -52,6 +52,18 @@ This is not a command but just a snippet so copy-and-paste or download the prope
   - Instead of that, this implementation uses a temporary file to iterate lines in the target env file.
     - `.env` often contains sensitive data so we do not use this way as the default.
 
+```
+# Download export-docker-dotenv to the current working directory
+
+source ./export-docker-dotenv
+
+# export variables from .env
+export_docker_dotenv .env
+
+# export variables that are currently undefined from .env
+export_docker_dotenv .env --no-overwrite
+```
+
 ## Supported shells
 
 See the test cases. [./.github/workflows/test.yml](./.github/workflows/test.yml)
